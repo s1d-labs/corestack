@@ -95,3 +95,15 @@ def test_is_item_and_drive_id():
 
 def test_gzip_roundtrip():
     assert gzip.decompress(gzip.compress(b"{}")) == b"{}"
+
+
+def test_free_text_contacts_are_scrubbed_but_ids_kept():
+    lo = ownership_fixture()
+    lo["additionalInfo"] = "Contact the range office on 9876543210 or +91 98765 43210."
+    lo["landOwnerShipQuery"][0]["query"] = "Send the estimate to range.office@example.org today."
+    out = gcp.clean_ownership(lo)
+    text = json.dumps(out)
+    assert "9876543210" not in text and "98765 43210" not in text and "range.office@example.org" not in text
+    assert "[phone removed]" in out["additionalInfo"] and "[e-mail removed]" in out["queries"][0]["query"]
+    ids = {"id": "6d50c9e2-4d97-4c47-bf3d-9876543210ab", "n": "EPID1715590637564"}
+    assert gcp.scrub(ids) == ids

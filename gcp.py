@@ -36,6 +36,21 @@ PLANNING_KEEP = {"pitSize", "totalNumberOfSeedlingToBePlanted", "treeSeedlingPac
                  "remark", "created_at", "updated_at"}
 
 
+EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+PHONE = re.compile(r"(?<![\w-])(?:\+?91[\s-]?|0)?(?:[6-9]\d{9}|[6-9]\d{4}[\s-]\d{5})(?![\w-])")
+
+
+def scrub(o):
+    """Pure: blank e-mail addresses and Indian mobile numbers inside any text (officials type them into remarks and queries)."""
+    if isinstance(o, str):
+        return PHONE.sub("[phone removed]", EMAIL.sub("[e-mail removed]", o))
+    if isinstance(o, list):
+        return [scrub(v) for v in o]
+    if isinstance(o, dict):
+        return {k: scrub(v) for k, v in o.items()}
+    return o
+
+
 def entity_type(name):
     """Pure: 'organisation' when the participant's name looks like an organisation, else 'person_or_unknown' (never publish those)."""
     return "organisation" if name and ORG_WORDS.search(name) else "person_or_unknown"
@@ -51,7 +66,7 @@ def clean_project(d):
     out = {k: v for k, v in d.items() if k not in ("images", "documents")}
     out["image_keys"] = [strip_url(u).rsplit("/", 1)[-1] for u in d.get("images") or []]
     out["documents"] = [{"label": x.get("label"), "key": strip_url(x.get("url", "")).rsplit("/", 1)[-1]} for x in d.get("documents") or []]
-    return out
+    return scrub(out)
 
 
 def clean_ownership(lo):
@@ -77,7 +92,7 @@ def clean_ownership(lo):
     out["document_types"] = sorted({x.get("docType") for x in lo.get("landOwnerShipDocument") or [] if x.get("docType")})
     out["site_image_keys"] = sorted({strip_url(x.get("imageUrl", "")).rsplit("/", 1)[-1] for x in
                                      (lo.get("geoTaggedImagesKeys") or []) + (lo.get("projectImage") or []) if x.get("imageUrl")})
-    return out
+    return scrub(out)
 
 
 def site_image_urls(lo):
@@ -101,8 +116,8 @@ def clean_monitoring(mt):
                                 "created_at": t.get("created_at"), "updated_at": t.get("updated_at")})
     seedlings = [{k: s.get(k) for k in ("commonName", "botanicalName", "numberOfSeedlings", "numberOfPlantedSeedlings",
                                          "fromDate", "toDate", "created_at", "updated_at")} for s in d.get("seedlings") or []]
-    return {"status": d.get("status"), "totalCostRequired": d.get("totalCostRequired"), "targets": targets, "seedlings": seedlings,
-            "plantation_planning": {k: (d.get("plantationPlanning") or {}).get(k) for k in PLANNING_KEEP} if d.get("plantationPlanning") else None}
+    return scrub({"status": d.get("status"), "totalCostRequired": d.get("totalCostRequired"), "targets": targets, "seedlings": seedlings,
+            "plantation_planning": {k: (d.get("plantationPlanning") or {}).get(k) for k in PLANNING_KEEP} if d.get("plantationPlanning") else None})
 
 
 def has_progress(t):
@@ -181,7 +196,7 @@ def process(hub, session, item):
                         key = im.get("key") or strip_url(im["url"]).rsplit("/", 1)[-1]
                         entry["image_keys"].append(key)
                         files.append((f"{base}/images/progress_{key}{ext(got[1])}", got[0], got[1]))
-                rec["progress"].append(entry)
+                rec["progress"].append(scrub(entry))
                 time.sleep(0.3)
     files.append((f"{base}/record.json", json.dumps(rec).encode(), "application/json"))
     for i in range(0, len(files), 250):

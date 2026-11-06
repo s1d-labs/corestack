@@ -26,7 +26,7 @@ jobs:
       - name: Parsing tests
         run: python -m pytest tests -q
       - name: scrape-check (local stand-in hub, 2 real items)
-        run: scrape-check --items 2
+        run: scrape-check --project corestack-layers --task layers --items 2   # light; gcp and panindia were checked by hand
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:

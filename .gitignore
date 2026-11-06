@@ -1,3 +1,5 @@
 .scrape-check/
 __pycache__/
 *.pyc
+.venv/
+local-out/

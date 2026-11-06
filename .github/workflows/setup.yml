@@ -4,6 +4,13 @@ name: setup
 # family.py. The hub trusts this repo (s1d-labs/<family>) through the GitHub OIDC token; no secrets are needed.
 on:
   workflow_dispatch:
+    inputs:
+      only:
+        description: "Projects to set up, comma-separated (empty = all)"
+        default: ""
+      max_items:
+        description: "Seed only the first N items of each queue (first trial; empty = all)"
+        default: ""
 
 permissions:
   id-token: write
@@ -12,7 +19,7 @@ permissions:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,3 +29,5 @@ jobs:
       - run: python setup_family.py
         env:
           SCRAPE_HUB_URL: https://scrape.s1d.me
+          ONLY: ${{ inputs.only }}
+          MAX_ITEMS: ${{ inputs.max_items }}

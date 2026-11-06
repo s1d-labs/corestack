@@ -1,13 +1,10 @@
 {
   "family": "corestack",
-  "about": "corestack data",
-  "setup": [
-    "pip install -r requirements.txt"
-  ],
+  "about": "CoRE Stack (core-stack.org) map layers per tehsil and India-wide, and the MoEFCC Green Credit Programme registry (land parcels, payments, plantation targets and progress).",
+  "setup": ["pip install -r requirements.txt"],
   "tasks": {
-    "crawl": [
-      "python",
-      "crawl.py"
-    ]
+    "layers": ["python", "layers.py"],
+    "panindia": ["python", "panindia.py"],
+    "gcp": ["python", "gcp.py"]
   }
 }

@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 .venv/
 local-out/
+.pytest_cache/
+.DS_Store
